@@ -2,8 +2,6 @@ package config
 
 import (
 	"encoding/json"
-	"errors"
-	"fmt"
 	"os"
 )
 
@@ -14,51 +12,53 @@ type Config struct {
 
 const configfilename string = ".gatorconfig.json"
 
-func getConfigFileLocation() string {
+func getConfigFileLocation() (string, error) {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
-		fmt.Println("Can't find config location")
-		return ""
+		return "", err
 	}
-	return homeDir + "/" + configfilename
+	return homeDir + "/" + configfilename, nil
 }
 
 func Read() (Config, error) {
-	userConfigFileLocation := getConfigFileLocation()
+	userConfigFileLocation, err := getConfigFileLocation()
+	if err != nil {
+		return Config{}, err
+	}
 	dat, err := os.ReadFile(userConfigFileLocation)
 	if err != nil {
-		return Config{}, errors.New("can't read config file")
+		return Config{}, err
 	}
 	cfg := Config{}
 	if err := json.Unmarshal(dat, &cfg); err != nil {
-		return Config{}, errors.New("can't read config file")
+		return Config{}, err
 	}
 	return cfg, nil
 }
 
-// func (cfg *Config) SetUser(userName string) error {
-// 	cfg.Username = userName
-// 	return write(*cfg)
-// }
-
 func write(cfg Config) error {
-	return nil
-}
-
-func (c Config) SetUser(username string) error {
-	c.Username = username
-	data, err := json.Marshal(c)
+	fullPath, err := getConfigFileLocation()
 	if err != nil {
 		return err
 	}
-	// fmt.Println(string(data))
-	path := getConfigFileLocation()
-	err = os.WriteFile(path, data, 0644)
+
+	file, err := os.Create(fullPath)
+	if err != nil {
+		return nil
+	}
+
+	defer file.Close()
+
+	encoder := json.NewEncoder(file)
+	err = encoder.Encode(cfg)
+
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-//Rewrite using json.NewEncoder then encoder.Encode
-//JSON marshall vs encode
+func (cfg *Config) SetUser(userName string) error {
+	cfg.Username = userName
+	return write(*cfg)
+}
