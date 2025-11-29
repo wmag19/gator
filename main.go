@@ -1,15 +1,19 @@
 package main
 
 import (
-	"fmt"
+	"database/sql"
 	"log"
 	"os"
 
 	"github.com/wmag19/gator/internal/config"
+	"github.com/wmag19/gator/internal/database"
+
+	_ "github.com/lib/pq"
 )
 
 type state struct {
 	config *config.Config
+	db     *database.Queries
 }
 
 func main() {
@@ -17,16 +21,24 @@ func main() {
 	if err != nil {
 		log.Fatalf("error reading config: %v", err)
 	}
-	fmt.Printf("Read config: %+v\n", cfg.Username)
+
+	db, err := sql.Open("postgres", cfg.DB_Url)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	programState := &state{
 		config: &cfg,
+		db:     database.New(db),
 	}
 
 	cmds := commands{}
 	cmds.registeredCommands = make(map[string]func(*state, command) error)
 
 	cmds.register("login", handlerLogin)
+	cmds.register("register", handlerRegister)
+	cmds.register("reset", handlerReset)
+	cmds.register("users", handlerUsers)
 
 	if len(os.Args) < 2 {
 		log.Fatal("need to provide more arguments")

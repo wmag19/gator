@@ -44,7 +44,7 @@ func write(cfg Config) error {
 
 	file, err := os.Create(fullPath)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	defer file.Close()
