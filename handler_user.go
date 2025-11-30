@@ -47,7 +47,7 @@ func handlerRegister(s *state, cmd command) error {
 		return fmt.Errorf("user already exists in the database with name %s", userName)
 	}
 
-	user, err := s.db.CreateUser(ctx, params)
+	_, err = s.db.CreateUser(ctx, params)
 	if err != nil {
 		return err
 	}
@@ -56,7 +56,7 @@ func handlerRegister(s *state, cmd command) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println("user created!", user)
+	//fmt.Println("user created!", user)
 	return nil
 
 }

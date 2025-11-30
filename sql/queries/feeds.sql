@@ -10,8 +10,16 @@ VALUES (
 )
 RETURNING *;
 
--- -- name: GetUser :one
--- SELECT * FROM users where name = $1 LIMIT 1;
+-- name: GetFeedsAndUser :many
+SELECT * FROM feeds JOIN users ON feeds.user_id = users.id;
+-- -- name: GetFeeds :many
+-- SELECT * FROM feeds JOIN users ON feeds.user_id = users.id;
+-- -- name: GetFeedsFromUser :many
+-- SELECT * FROM feeds WHERE user_id = $1;
+-- -- name: GetUserFromFeed :one
+-- SELECT * FROM feeds JOIN users ON feeds.user_id = users.id WHERE feeds.id = $1;
+
+-- name: GetUserNameFromFeedID
 
 -- -- name: DeleteUsers :exec
 -- DELETE FROM users;

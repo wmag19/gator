@@ -84,21 +84,18 @@ func handlerAddFeed(s *state, cmd command) error {
 	feedName := cmd.Args[0]
 	feedURL := cmd.Args[1]
 	userName := s.config.Username
-	userUUID, err := s.db.GetUser(ctx, userName)
+	dbUser, err := s.db.GetUser(ctx, userName)
 	if err != nil {
 		return fmt.Errorf("error fetching user: %w", err)
 	}
 
-	userNullID := uuid.NullUUID{
-		UUID: userUUID.ID,
-	}
 	params := database.CreateFeedParams{
 		ID:        uuid.New(),
 		CreatedAt: time.Now().UTC(),
 		UpdatedAt: time.Now().UTC(),
 		Name:      feedName,
 		Url:       feedURL,
-		UserID:    userNullID,
+		UserID:    dbUser.ID,
 	}
 
 	feed, err := s.db.CreateFeed(ctx, params)
@@ -108,4 +105,19 @@ func handlerAddFeed(s *state, cmd command) error {
 	fmt.Println("user created!", feed)
 	return nil
 
+}
+
+func handlerFeeds(s *state, cmd command) error {
+	if len(cmd.Args) != 0 {
+		return fmt.Errorf("usage: %s", cmd.Name)
+	}
+	ctx := context.Background()
+	feeds, err := s.db.GetFeedsAndUser(ctx)
+	if err != nil {
+		return fmt.Errorf("error fetching user: %w", err)
+	}
+	for _, v := range feeds {
+		fmt.Println(v.Name, v.Url, v.Name_2)
+	}
+	return nil
 }
