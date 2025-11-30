@@ -30,11 +30,12 @@ type RSSItem struct {
 }
 
 func handlerAgg(s *state, cmd command) error {
-	if len(cmd.Args) != 0 { //change
+	if len(cmd.Args) != 1 {
 		return fmt.Errorf("usage: %s <feedURL>", cmd.Name)
 	}
 	ctx := context.Background()
-	feed, err := fetchFeed(ctx, "https://www.wagslane.dev/index.xml") //hardcoded
+	feedUrl := cmd.Args[0]
+	feed, err := fetchFeed(ctx, feedUrl)
 	if err != nil {
 		return err
 	}
