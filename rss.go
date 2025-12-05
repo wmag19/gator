@@ -89,7 +89,7 @@ func handlerAddFeed(s *state, cmd command) error {
 		return fmt.Errorf("error fetching user: %w", err)
 	}
 
-	params := database.CreateFeedParams{
+	paramsCreateFeed := database.CreateFeedParams{
 		ID:        uuid.New(),
 		CreatedAt: time.Now().UTC(),
 		UpdatedAt: time.Now().UTC(),
@@ -98,13 +98,24 @@ func handlerAddFeed(s *state, cmd command) error {
 		UserID:    dbUser.ID,
 	}
 
-	feed, err := s.db.CreateFeed(ctx, params)
+	feed, err := s.db.CreateFeed(ctx, paramsCreateFeed)
 	if err != nil {
 		return fmt.Errorf("error creating feed: %w", err)
 	}
-	fmt.Println("user created!", feed)
-	return nil
 
+	paramsFeedFollows := database.CreateFeedFollowParams{
+		ID:        uuid.New(),
+		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
+		FeedID:    feed.ID,
+		UserID:    dbUser.ID,
+	}
+	_, err = s.db.CreateFeedFollow(ctx, paramsFeedFollows)
+	if err != nil {
+		return fmt.Errorf("error creating feed follow: %w", err)
+	}
+	fmt.Println("feed and associated feed follows created!", feed)
+	return nil
 }
 
 func handlerFeeds(s *state, cmd command) error {

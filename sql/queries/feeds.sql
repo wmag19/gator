@@ -19,10 +19,13 @@ SELECT * FROM feeds JOIN users ON feeds.user_id = users.id;
 -- -- name: GetUserFromFeed :one
 -- SELECT * FROM feeds JOIN users ON feeds.user_id = users.id WHERE feeds.id = $1;
 
--- name: GetUserNameFromFeedID
+---- name: GetUserNameFromFeedID
 
 -- -- name: DeleteUsers :exec
 -- DELETE FROM users;
 
 -- -- name: GetUsers :many
 -- SELECT * FROM users;
+
+-- name: GetFeedsFromURL :one
+SELECT * FROM feeds WHERE url = $1;

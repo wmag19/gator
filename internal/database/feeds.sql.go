@@ -105,3 +105,36 @@ func (q *Queries) GetFeedsAndUser(ctx context.Context) ([]GetFeedsAndUserRow, er
 	}
 	return items, nil
 }
+
+const getFeedsFromURL = `-- name: GetFeedsFromURL :one
+
+
+
+
+SELECT id, created_at, updated_at, name, url, user_id FROM feeds WHERE url = $1
+`
+
+// -- name: GetFeeds :many
+// SELECT * FROM feeds JOIN users ON feeds.user_id = users.id;
+// -- name: GetFeedsFromUser :many
+// SELECT * FROM feeds WHERE user_id = $1;
+// -- name: GetUserFromFeed :one
+// SELECT * FROM feeds JOIN users ON feeds.user_id = users.id WHERE feeds.id = $1;
+// -- name: GetUserNameFromFeedID
+// -- name: DeleteUsers :exec
+// DELETE FROM users;
+// -- name: GetUsers :many
+// SELECT * FROM users;
+func (q *Queries) GetFeedsFromURL(ctx context.Context, url string) (Feed, error) {
+	row := q.db.QueryRowContext(ctx, getFeedsFromURL, url)
+	var i Feed
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Name,
+		&i.Url,
+		&i.UserID,
+	)
+	return i, err
+}
