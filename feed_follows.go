@@ -9,16 +9,12 @@ import (
 	"github.com/wmag19/gator/internal/database"
 )
 
-func handlerFollow(s *state, cmd command) error {
+func handlerFollow(s *state, cmd command, user database.User) error {
 	if len(cmd.Args) != 1 {
 		return fmt.Errorf("usage: %s <URL>", cmd.Name)
 	}
 	ctx := context.Background()
 	feed, err := s.db.GetFeedsFromURL(ctx, cmd.Args[0])
-	if err != nil {
-		return err
-	}
-	user, err := s.db.GetUser(ctx, s.config.Username)
 	if err != nil {
 		return err
 	}
@@ -37,15 +33,11 @@ func handlerFollow(s *state, cmd command) error {
 	return nil
 }
 
-func handlerFollowing(s *state, cmd command) error {
+func handlerFollowing(s *state, cmd command, user database.User) error {
 	if len(cmd.Args) != 0 {
 		return fmt.Errorf("usage: %s", cmd.Name)
 	}
 	ctx := context.Background()
-	user, err := s.db.GetUser(ctx, s.config.Username)
-	if err != nil {
-		return err
-	}
 	feedFollows, err := s.db.GetFeedFollowsForUser(ctx, user.ID)
 	if err != nil {
 		return err

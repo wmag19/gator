@@ -76,18 +76,13 @@ func (r *RSSFeed) fixFeedString() {
 	}
 }
 
-func handlerAddFeed(s *state, cmd command) error {
+func handlerAddFeed(s *state, cmd command, user database.User) error {
 	if len(cmd.Args) != 2 {
 		return fmt.Errorf("usage: %s <name> <url>", cmd.Name)
 	}
 	ctx := context.Background()
 	feedName := cmd.Args[0]
 	feedURL := cmd.Args[1]
-	userName := s.config.Username
-	dbUser, err := s.db.GetUser(ctx, userName)
-	if err != nil {
-		return fmt.Errorf("error fetching user: %w", err)
-	}
 
 	paramsCreateFeed := database.CreateFeedParams{
 		ID:        uuid.New(),
@@ -95,7 +90,7 @@ func handlerAddFeed(s *state, cmd command) error {
 		UpdatedAt: time.Now().UTC(),
 		Name:      feedName,
 		Url:       feedURL,
-		UserID:    dbUser.ID,
+		UserID:    user.ID,
 	}
 
 	feed, err := s.db.CreateFeed(ctx, paramsCreateFeed)
@@ -108,7 +103,7 @@ func handlerAddFeed(s *state, cmd command) error {
 		CreatedAt: time.Now().UTC(),
 		UpdatedAt: time.Now().UTC(),
 		FeedID:    feed.ID,
-		UserID:    dbUser.ID,
+		UserID:    user.ID,
 	}
 	_, err = s.db.CreateFeedFollow(ctx, paramsFeedFollows)
 	if err != nil {
