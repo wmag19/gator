@@ -66,7 +66,6 @@ func scrapeFeeds(s *state) error {
 	}
 	feedID := feedFetch.ID
 	for _, v := range feed.Channel.Item {
-		fmt.Println(v)
 		parsedTime, err := time.Parse(time.RFC1123Z, v.PubDate)
 		if err != nil {
 			return err
@@ -82,11 +81,15 @@ func scrapeFeeds(s *state) error {
 			PublishedAt: parsedTime,
 			FeedID:      feedID,
 		}
-		fmt.Println("adding to db")
 		err = s.db.CreatePost(ctx, arg)
 		if err != nil {
-			return err
+			if err.Error() == `pq: duplicate key value violates unique constraint "posts_url_key"` {
+				fmt.Printf("Post already exists, skipping: %s\n", v.Title)
+				continue
+			}
+			return fmt.Errorf("error creating post: %w", err)
 		}
+		fmt.Printf("Successfully added: %s\n", v.Title)
 	}
 	params := database.MarkFeedFetchedParams{
 		LastFetchedAt: lastFetchedTime,

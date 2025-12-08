@@ -1,0 +1,14 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "Gator DB",
+      "Group": "Servers",
+      "Host": "postgres",
+      "Port": 5432,
+      "MaintenanceDB": "gator",
+      "Username": "postgres",
+      "SSLMode": "prefer",
+      "PassFile": "/pgpass"
+    }
+  }
+}

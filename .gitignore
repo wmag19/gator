@@ -40,3 +40,5 @@ go.work
 # OS files
 Thumbs.db
 .DS_Store
+
+pgadmin-pgpass
