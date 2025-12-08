@@ -7,6 +7,7 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"github.com/google/uuid"
@@ -22,7 +23,7 @@ VALUES (
     $5,
     $6
 )
-RETURNING id, created_at, updated_at, name, url, user_id
+RETURNING id, created_at, updated_at, name, url, user_id, last_fetched_at
 `
 
 type CreateFeedParams struct {
@@ -51,25 +52,27 @@ func (q *Queries) CreateFeed(ctx context.Context, arg CreateFeedParams) (Feed, e
 		&i.Name,
 		&i.Url,
 		&i.UserID,
+		&i.LastFetchedAt,
 	)
 	return i, err
 }
 
 const getFeedsAndUser = `-- name: GetFeedsAndUser :many
-SELECT feeds.id, feeds.created_at, feeds.updated_at, feeds.name, url, user_id, users.id, users.created_at, users.updated_at, users.name FROM feeds JOIN users ON feeds.user_id = users.id
+SELECT feeds.id, feeds.created_at, feeds.updated_at, feeds.name, url, user_id, last_fetched_at, users.id, users.created_at, users.updated_at, users.name FROM feeds JOIN users ON feeds.user_id = users.id
 `
 
 type GetFeedsAndUserRow struct {
-	ID          uuid.UUID
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	Name        string
-	Url         string
-	UserID      uuid.UUID
-	ID_2        uuid.UUID
-	CreatedAt_2 time.Time
-	UpdatedAt_2 time.Time
-	Name_2      string
+	ID            uuid.UUID
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
+	Name          string
+	Url           string
+	UserID        uuid.UUID
+	LastFetchedAt sql.NullTime
+	ID_2          uuid.UUID
+	CreatedAt_2   time.Time
+	UpdatedAt_2   time.Time
+	Name_2        string
 }
 
 func (q *Queries) GetFeedsAndUser(ctx context.Context) ([]GetFeedsAndUserRow, error) {
@@ -88,6 +91,7 @@ func (q *Queries) GetFeedsAndUser(ctx context.Context) ([]GetFeedsAndUserRow, er
 			&i.Name,
 			&i.Url,
 			&i.UserID,
+			&i.LastFetchedAt,
 			&i.ID_2,
 			&i.CreatedAt_2,
 			&i.UpdatedAt_2,
@@ -111,7 +115,7 @@ const getFeedsFromURL = `-- name: GetFeedsFromURL :one
 
 
 
-SELECT id, created_at, updated_at, name, url, user_id FROM feeds WHERE url = $1
+SELECT id, created_at, updated_at, name, url, user_id, last_fetched_at FROM feeds WHERE url = $1
 `
 
 // -- name: GetFeeds :many
@@ -135,6 +139,7 @@ func (q *Queries) GetFeedsFromURL(ctx context.Context, url string) (Feed, error)
 		&i.Name,
 		&i.Url,
 		&i.UserID,
+		&i.LastFetchedAt,
 	)
 	return i, err
 }

@@ -31,16 +31,18 @@ type RSSItem struct {
 
 func handlerAgg(s *state, cmd command) error {
 	if len(cmd.Args) != 1 {
-		return fmt.Errorf("usage: %s <feedURL>", cmd.Name)
+		return fmt.Errorf("usage: %s <time_between_reqs>", cmd.Name)
 	}
-	ctx := context.Background()
-	feedUrl := cmd.Args[0]
-	feed, err := fetchFeed(ctx, feedUrl)
+	fmt.Println("Collecting feeds every", cmd.Args[0])
+
+	timeBetweenRequests, err := time.ParseDuration(cmd.Args[0])
 	if err != nil {
 		return err
 	}
-	fmt.Println(feed.Channel)
-	return nil
+	ticker := time.NewTicker(timeBetweenRequests)
+	for ; ; <-ticker.C {
+		scrapeFeeds(s)
+	}
 }
 
 func fetchFeed(ctx context.Context, feedURL string) (*RSSFeed, error) {
