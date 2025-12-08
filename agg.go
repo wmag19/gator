@@ -3,14 +3,55 @@ package main
 import (
 	"context"
 	"database/sql"
+	"encoding/xml"
 	"fmt"
+	"html"
+	"io"
+	"net/http"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/wmag19/gator/internal/database"
 )
 
+type RSSFeed struct {
+	Channel struct {
+		Title       string    `xml:"title"`
+		Link        string    `xml:"link"`
+		Description string    `xml:"description"`
+		Item        []RSSItem `xml:"item"`
+	} `xml:"channel"`
+}
+
+type RSSItem struct {
+	Title       string `xml:"title"`
+	Link        string `xml:"link"`
+	Description string `xml:"description"`
+	PubDate     string `xml:"pubDate"`
+}
+
+func handlerAgg(s *state, cmd command) error {
+	if len(cmd.Args) != 1 {
+		return fmt.Errorf("usage: %s <time_between_reqs>", cmd.Name)
+	}
+	fmt.Println("Collecting feeds every", cmd.Args[0])
+
+	timeBetweenRequests, err := time.ParseDuration(cmd.Args[0])
+	if err != nil {
+		return err
+	}
+	ticker := time.NewTicker(timeBetweenRequests)
+	for ; ; <-ticker.C {
+		scrapeFeeds(s)
+	}
+}
+
 func scrapeFeeds(s *state) error {
 	ctx := context.Background()
+	// user, err := s.db.GetUser(ctx, s.config.Username)
+	// if err != nil {
+	// 	return err
+	// }
 	feedFetch, err := s.db.GetNextFeedToFetch(ctx)
 	if err != nil {
 		return err
@@ -18,6 +59,34 @@ func scrapeFeeds(s *state) error {
 	lastFetchedTime := sql.NullTime{
 		Time:  time.Now().UTC(),
 		Valid: true,
+	}
+	feed, err := fetchFeed(ctx, feedFetch.Url)
+	if err != nil {
+		return err
+	}
+	feedID := feedFetch.ID
+	for _, v := range feed.Channel.Item {
+		fmt.Println(v)
+		parsedTime, err := time.Parse(time.RFC1123Z, v.PubDate)
+		if err != nil {
+			return err
+		}
+		fmt.Println(v.Title)
+		arg := database.CreatePostParams{
+			ID:          uuid.New(),
+			CreatedAt:   time.Now().UTC(),
+			UpdatedAt:   time.Now().UTC(),
+			Title:       v.Title,
+			Url:         v.Link,
+			Description: v.Description,
+			PublishedAt: parsedTime,
+			FeedID:      feedID,
+		}
+		fmt.Println("adding to db")
+		err = s.db.CreatePost(ctx, arg)
+		if err != nil {
+			return err
+		}
 	}
 	params := database.MarkFeedFetchedParams{
 		LastFetchedAt: lastFetchedTime,
@@ -28,10 +97,38 @@ func scrapeFeeds(s *state) error {
 	if err != nil {
 		return err
 	}
-	feed, err := fetchFeed(ctx, feedFetch.Url)
-	if err != nil {
-		return err
-	}
-	fmt.Println(feed.Channel.Title)
 	return nil
+}
+
+func fetchFeed(ctx context.Context, feedURL string) (*RSSFeed, error) { //Need to add retry mechanism to this!
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, feedURL, http.NoBody)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("User-Agent", "gator")
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("error making http request: %w", err)
+	}
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("error reading response: %w", err)
+	}
+	var feed RSSFeed
+	err = xml.Unmarshal(data, &feed)
+	if err != nil {
+		return nil, fmt.Errorf("error unmarshalling XML: %w", err)
+	}
+	feed.fixFeedString()
+	return &feed, nil
+}
+
+func (r *RSSFeed) fixFeedString() {
+	r.Channel.Description = html.UnescapeString(r.Channel.Description)
+	r.Channel.Title = html.UnescapeString(r.Channel.Title)
+	for i := range r.Channel.Item {
+		r.Channel.Item[i].Description = html.UnescapeString(r.Channel.Item[i].Description)
+		r.Channel.Item[i].Title = html.UnescapeString(r.Channel.Item[i].Title)
+	}
 }
