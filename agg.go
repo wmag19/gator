@@ -141,7 +141,7 @@ func handlerBrowse(s *state, cmd command, user database.User) error {
 	ctx := context.Background()
 	var limit int32
 	if len(cmd.Args) == 0 {
-		limit = 5
+		limit = 2
 	}
 	if len(cmd.Args) == 1 {
 		i64, _ := strconv.ParseInt(cmd.Args[0], 10, 32)
