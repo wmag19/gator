@@ -8,6 +8,7 @@ import (
 	"html"
 	"io"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/google/uuid"
@@ -134,4 +135,33 @@ func (r *RSSFeed) fixFeedString() {
 		r.Channel.Item[i].Description = html.UnescapeString(r.Channel.Item[i].Description)
 		r.Channel.Item[i].Title = html.UnescapeString(r.Channel.Item[i].Title)
 	}
+}
+
+func handlerBrowse(s *state, cmd command, user database.User) error {
+	ctx := context.Background()
+	var limit int32
+	if len(cmd.Args) == 0 {
+		limit = 5
+	}
+	if len(cmd.Args) == 1 {
+		i64, _ := strconv.ParseInt(cmd.Args[0], 10, 32)
+		i32 := int32(i64)
+		limit = i32
+	}
+	if len(cmd.Args) > 1 {
+		return fmt.Errorf("usage: %s <limit:optional>", cmd.Name)
+	}
+	user, err := s.db.GetUser(ctx, s.config.Username)
+	if err != nil {
+		return err
+	}
+	params := database.GetPostsForUserParams{
+		UserID: user.ID,
+		Limit:  limit,
+	}
+	posts, err := s.db.GetPostsForUser(ctx, params)
+	for _, v := range posts {
+		fmt.Println(v)
+	}
+	return nil
 }
