@@ -15,9 +15,14 @@ func handlerBrowse(s *state, cmd command, user database.User) error {
 		limit = 2
 	}
 	if len(cmd.Args) == 1 {
-		i64, _ := strconv.ParseInt(cmd.Args[0], 10, 32)
-		i32 := int32(i64)
-		limit = i32
+		i64, err := strconv.ParseInt(cmd.Args[0], 10, 32)
+		if err != nil {
+			fmt.Printf("Error parsing limit - defaulting to 2")
+			limit = 2
+		} else {
+			i32 := int32(i64)
+			limit = i32
+		}
 	}
 	if len(cmd.Args) > 1 {
 		return fmt.Errorf("usage: %s <limit:optional>", cmd.Name)
