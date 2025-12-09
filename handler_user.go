@@ -18,12 +18,12 @@ func handlerLogin(s *state, cmd command) error {
 	ctx := context.Background()
 	_, err := s.db.GetUser(ctx, username)
 	if err != nil {
-		return err
+		return fmt.Errorf("couldn't find user: %w", err)
 	}
 
 	err = s.config.SetUser(username)
 	if err != nil {
-		return err
+		return fmt.Errorf("couldn't set current user: %w", err)
 	}
 	fmt.Println("username has been set to ", username)
 	return nil
@@ -47,18 +47,17 @@ func handlerRegister(s *state, cmd command) error {
 		return fmt.Errorf("user already exists in the database with name %s", userName)
 	}
 
-	_, err = s.db.CreateUser(ctx, params)
+	dbUser, err := s.db.CreateUser(ctx, params)
 	if err != nil {
-		return err
+		return fmt.Errorf("couldn't create user: %w", err)
 	}
 
 	err = s.config.SetUser(userName)
 	if err != nil {
-		return err
+		return fmt.Errorf("couldn't set current user: %w", err)
 	}
-	//fmt.Println("user created!", user)
+	fmt.Println("user created!", dbUser.Name)
 	return nil
-
 }
 
 func handlerReset(s *state, cmd command) error {

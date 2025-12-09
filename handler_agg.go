@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -26,29 +28,29 @@ func handlerAgg(s *state, cmd command) error {
 	}
 }
 
-func scrapeFeeds(s *state) error {
+func scrapeFeeds(s *state) {
 	ctx := context.Background()
-	// user, err := s.db.GetUser(ctx, s.config.Username)
-	// if err != nil {
-	// 	return err
-	// }
 	feedFetch, err := s.db.GetNextFeedToFetch(ctx)
 	if err != nil {
-		return err
+		log.Println("Couldn't get next feeds to fetch", err)
+		return
 	}
 	lastFetchedTime := sql.NullTime{
 		Time:  time.Now().UTC(),
 		Valid: true,
 	}
 	feed, err := fetchFeed(ctx, feedFetch.Url)
+	feed.fixFeedString() //Remove escaped strings from HTML feed
 	if err != nil {
-		return err
+		log.Printf("Couldn't collect feed %s: %v", feedFetch.Name, err)
+		return
 	}
 	feedID := feedFetch.ID
 	for _, v := range feed.Channel.Item {
 		parsedTime, err := time.Parse(time.RFC1123Z, v.PubDate)
 		if err != nil {
-			return err
+			log.Printf("Error parsing time for feed, %v", err)
+			return
 		}
 		fmt.Println(v.Title)
 		arg := database.CreatePostParams{
@@ -63,13 +65,13 @@ func scrapeFeeds(s *state) error {
 		}
 		err = s.db.CreatePost(ctx, arg)
 		if err != nil {
-			if err.Error() == `pq: duplicate key value violates unique constraint "posts_url_key"` {
-				fmt.Printf("Post already exists, skipping: %s\n", v.Title)
+			if strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
 				continue
 			}
-			return fmt.Errorf("error creating post: %w", err)
+			log.Printf("Couldn't create post: %v", err)
+			return
 		}
-		fmt.Printf("Successfully added: %s\n", v.Title)
+		fmt.Printf("Feed %s collected, %v posts found", feedFetch.Name, len(feed.Channel.Item))
 	}
 	params := database.MarkFeedFetchedParams{
 		LastFetchedAt: lastFetchedTime,
@@ -78,7 +80,6 @@ func scrapeFeeds(s *state) error {
 	}
 	err = s.db.MarkFeedFetched(ctx, params)
 	if err != nil {
-		return err
+		log.Printf("Couldn't mark feed as successfully fetched: %v", err)
 	}
-	return nil
 }

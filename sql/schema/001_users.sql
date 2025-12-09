@@ -7,4 +7,4 @@ CREATE TABLE users (
 );
 
 -- +goose Down
-DROP TABLE feeds;
+DROP TABLE users;

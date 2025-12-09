@@ -22,20 +22,20 @@ func handlerBrowse(s *state, cmd command, user database.User) error {
 	if len(cmd.Args) > 1 {
 		return fmt.Errorf("usage: %s <limit:optional>", cmd.Name)
 	}
-	user, err := s.db.GetUser(ctx, s.config.Username)
-	if err != nil {
-		return err
-	}
 	params := database.GetPostsForUserParams{
 		UserID: user.ID,
 		Limit:  limit,
 	}
 	posts, err := s.db.GetPostsForUser(ctx, params)
 	if err != nil {
-		return err
+		return fmt.Errorf("couldn't get posts for user: %w", err)
 	}
 	for _, v := range posts {
-		fmt.Println(v)
+		// feedItem := RSSFeed{
+		// 	Title: v.Title,
+		// 	Link: v.Li
+		// }
+		fmt.Println(v.Description)
 	}
 	return nil
 }
