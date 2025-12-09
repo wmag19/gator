@@ -31,11 +31,11 @@ func handlerBrowse(s *state, cmd command, user database.User) error {
 		return fmt.Errorf("couldn't get posts for user: %w", err)
 	}
 	for _, v := range posts {
-		// feedItem := RSSFeed{
-		// 	Title: v.Title,
-		// 	Link: v.Li
-		// }
-		fmt.Println(v.Description)
+		fmt.Printf("%s \n", v.PublishedAt.Format("Mon Jan 2"))
+		fmt.Printf("--- %s ---\n", v.Title)
+		fmt.Printf("    %v\n", v.Description)
+		fmt.Printf("Link: %s\n", v.Url)
+		fmt.Println("=====================================")
 	}
 	return nil
 }

@@ -7,6 +7,8 @@ import (
 	"html"
 	"io"
 	"net/http"
+	"regexp"
+	"strings"
 )
 
 type RSSFeed struct {
@@ -49,11 +51,20 @@ func fetchFeed(ctx context.Context, feedURL string) (*RSSFeed, error) { //Need t
 	return &feed, nil
 }
 
+func stripHTMLTags(s string) string {
+	// Remove HTML tags
+	re := regexp.MustCompile(`<[^>]*>`)
+	stripped := re.ReplaceAllString(s, "")
+	// Clean up extra whitespace
+	stripped = strings.TrimSpace(stripped)
+	return stripped
+}
+
 func (r *RSSFeed) fixFeedString() {
-	r.Channel.Description = html.UnescapeString(r.Channel.Description)
+	r.Channel.Description = stripHTMLTags(html.UnescapeString(r.Channel.Description))
 	r.Channel.Title = html.UnescapeString(r.Channel.Title)
 	for i := range r.Channel.Item {
-		r.Channel.Item[i].Description = html.UnescapeString(r.Channel.Item[i].Description)
+		r.Channel.Item[i].Description = stripHTMLTags(html.UnescapeString(r.Channel.Item[i].Description))
 		r.Channel.Item[i].Title = html.UnescapeString(r.Channel.Item[i].Title)
 	}
 }
