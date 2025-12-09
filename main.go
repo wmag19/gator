@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"log"
 	"os"
@@ -62,5 +63,16 @@ func main() {
 	err = cmds.run(programState, cmd)
 	if err != nil {
 		log.Fatal(err)
+	}
+}
+
+func middlewareLoggedIn(handler func(s *state, cmd command, user database.User) error) func(*state, command) error {
+	return func(s *state, cmd command) error {
+		ctx := context.Background()
+		user, err := s.db.GetUser(ctx, s.config.Username)
+		if err != nil {
+			return err
+		}
+		return handler(s, cmd, user)
 	}
 }
