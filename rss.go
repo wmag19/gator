@@ -38,6 +38,8 @@ func fetchFeed(ctx context.Context, feedURL string) (*RSSFeed, error) { //Need t
 	if err != nil {
 		return nil, fmt.Errorf("error making http request: %w", err)
 	}
+	defer resp.Body.Close()
+
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("error reading response: %w", err)

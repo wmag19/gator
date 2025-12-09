@@ -3,6 +3,10 @@
 ## Overview:
 This is a demo Golang CLI tool which will fetch RSS feeds for users and display them in the terminal. This tool uses Postgresql for a database backend. with SQLC for generating type-safe SQL code and Gator for managing the database migrations. 
 
+## TODO:
+- Logging
+- Retry mechanism on fetching rss.
+
 ## Installation:
 * Use `docker-compose.yml` file at the root of the repository to generate a local environment. Remember to change the password to something secure!
 * Add suitable connection string into a `.gatorconfig.json` file in your home directory with the following syntax (including suitable connection string):
