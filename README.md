@@ -3,6 +3,8 @@
 ## Overview:
 This is a demo Golang CLI tool which will fetch RSS feeds for users and display them in the terminal. This tool uses Postgresql for a database backend. with SQLC for generating type-safe SQL code and Gator for managing the database migrations. 
 
+This tool was built following the Boot.Dev course on HTTP Clients in Golang.
+
 ## TODO:
 - Logging
 - Retry mechanism on fetching rss.
